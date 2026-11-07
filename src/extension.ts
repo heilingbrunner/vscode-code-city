@@ -148,7 +148,16 @@ export function activate(ctx: vscode.ExtensionContext) {
   const show = async (arg?: unknown) => {
     const chosen = await folderFrom(arg);
     if (chosen) rootUri = chosen;
-    else if (!panel) rootUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+    else if (!panel) {
+      const folders = vscode.workspace.workspaceFolders ?? [];
+      if (folders.length > 1) {
+        const pick = await vscode.window.showQuickPick(
+          folders.map(f => ({ label: f.name, description: f.uri.fsPath, uri: f.uri })),
+          { placeHolder: 'Select the workspace folder to visualize' });
+        if (!pick) return;
+        rootUri = pick.uri;
+      } else rootUri = folders[0]?.uri;
+    }
     if (!rootUri) { vscode.window.showWarningMessage('Code City: open a folder first.'); return; }
 
     if (panel) {
