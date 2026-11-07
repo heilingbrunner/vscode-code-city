@@ -1,0 +1,91 @@
+{
+  "name": "vscode-code-city",
+  "author": {
+        "name": "j.heilingbrunner",
+        "email": "j.heilingbrunner@gmail.com"
+    },
+    "publisher": "JHeilingbrunner",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/heilingbrunner/vscode-code-city.git"
+    },
+  "displayName": "Code City",
+  "description": "Visualize code complexity (file length, folder structure) as a 3D city.",
+  "version": "0.0.1",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Visualization"],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "codeCity.show", "title": "Code City: Show" },
+      { "command": "codeCity.refresh", "title": "Code City: Refresh" },
+      { "command": "codeCity.selectProject", "title": "Code City: Select Project Type" }
+    ],
+    "menus": {
+      "explorer/context": [
+        { "command": "codeCity.show", "when": "explorerResourceIsFolder", "group": "navigation@100" }
+      ]
+    },
+    "configuration": {
+      "title": "Code City",
+      "properties": {
+        "codeCity.ignoredFolders": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "order": 1,
+          "default": [".git", ".svn", ".claude"],
+          "markdownDescription": "Folder names to ignore at any depth, e.g. `.git`. Everything inside a folder with one of these names is skipped. `*` and `?` wildcards work (e.g. `cmake-build-*`)."
+        },
+        "codeCity.exclude": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["**/node_modules/**", "**/dist/**", "**/out/**", "**/build/**", "**/*.min.js", "**/*.map", "**/package-lock.json"],
+          "markdownDescription": "Additional glob patterns excluded from the city (applied together with `codeCity.ignoredFolders`).",
+          "order": 2
+        },
+        "codeCity.projectTypes": {
+          "type": "object",
+          "order": 0,
+          "additionalProperties": { "type": "string" },
+          "default": {
+            "Go project": "*.go",
+            "CSharp project": "*.cs|*.xaml|*.xaml.cs|*.resx"
+          },
+          "markdownDescription": "Project types: the **item** is the project name, the **value** its file patterns separated by `|`, e.g. `*.cs|*.xaml|*.resx`. Only files matching the active project's patterns are scanned. Patterns without a `/` match at any depth."
+        },
+        "codeCity.activeProject": {
+          "type": "string",
+          "default": "Auto",
+          "markdownDescription": "`Auto` detects the project type from the files in the folder (the type matching the most files). Otherwise a project type name from `codeCity.projectTypes`, or `All files` to disable filtering."
+        },
+        "codeCity.heightScale": {
+          "type": "string",
+          "enum": ["linear", "sqrt", "log"],
+          "default": "sqrt",
+          "description": "How lines of code map to building height."
+        },
+        "codeCity.maxFileSizeKB": {
+          "type": "number",
+          "default": 1024,
+          "description": "Files larger than this are skipped."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/three": "^0.170.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.24.0",
+    "three": "^0.170.0",
+    "typescript": "^5.6.0"
+  }
+}
