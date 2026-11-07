@@ -7,14 +7,14 @@ export const ALL_FILES = 'All files';
 
 function toType(rawName: string, patternList: string): ProjectType | undefined {
   const name = rawName.trim();
-  const patterns = patternList.split('|').map(p => p.trim()).filter(Boolean)
+  const patterns = patternList.split(',').map(p => p.trim()).filter(Boolean)
     .map(p => (p.includes('/') ? p : `**/${p}`));
   return name && patterns.length ? { name, patterns } : undefined;
 }
 
 /**
  * Parse the `codeCity.projectTypes` setting: an object mapping a project name
- * to its patterns, e.g. { "Go project": "*.go", "CSharp project": "*.cs|*.xaml" }.
+ * to its patterns, e.g. { "Go project": "*.go", "CSharp project": "*.cs, *.xaml" }.
  * Patterns without a "/" match at any depth (a "**\/" prefix is added).
  * Malformed entries (no name or no patterns) are ignored; the first of two
  * equal names wins.

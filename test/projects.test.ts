@@ -4,9 +4,9 @@ import { parseProjectTypes, globToRegExp, matchesProject, detectProject, resolve
 
 const types = parseProjectTypes({
   'Go project': '*.go',
-  'CSharp project': '*.cs|*.xaml|*.xaml.cs|*.resx',
+  'CSharp project': '*.cs, *.xaml, *.xaml.cs, *.resx',
   'Empty': '',
-  'Blank patterns': ' | ',
+  'Blank patterns': ' , ',
   '': '*.x',
   'Src only': 'src/**/*.ts',
 });

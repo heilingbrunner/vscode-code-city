@@ -57,7 +57,7 @@ async function setProject(name: string) {
 async function selectProject() {
   const { projectTypes, activeProject } = cfg();
   const items = [AUTO, ALL_FILES, ...projectTypes.map(p => p.name)].map(label => ({
-    label, description: label === activeProject ? 'active' : projectTypes.find(p => p.name === label)?.patterns.join(' | ').replace(/\*\*\//g, ''),
+    label, description: label === activeProject ? 'active' : projectTypes.find(p => p.name === label)?.patterns.join(', ').replace(/\*\*\//g, ''),
   }));
   const pick = await vscode.window.showQuickPick(items, { placeHolder: 'Which files should the city include?' });
   if (pick) await setProject(pick.label);

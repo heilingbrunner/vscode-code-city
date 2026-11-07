@@ -51,9 +51,9 @@
           "additionalProperties": { "type": "string" },
           "default": {
             "Go project": "*.go",
-            "CSharp project": "*.cs|*.xaml|*.xaml.cs|*.resx"
+            "CSharp project": "*.cs, *.xaml, *.xaml.cs, *.resx"
           },
-          "markdownDescription": "Project types: the **item** is the project name, the **value** its file patterns separated by `|`, e.g. `*.cs|*.xaml|*.resx`. Only files matching the active project's patterns are scanned. Patterns without a `/` match at any depth."
+          "markdownDescription": "Project types: the **item** is the project name, the **value** its file patterns separated by commas, e.g. `*.cs, *.xaml, *.resx`. Only files matching the active project's patterns are scanned. Patterns without a `/` match at any depth."
         },
         "codeCity.activeProject": {
           "type": "string",
