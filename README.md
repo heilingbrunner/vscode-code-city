@@ -4,6 +4,7 @@
 
 VS Code extension that renders the open folder as a 3D city.
 
+- Inspired by [Richard Wettel - CodeCity](https://wettel.github.io/codecity.html)
 - **Folder → district** (nested plots, squarified treemap by LOC)
 - **File → building** (height = lines of code; linear / sqrt / log scale)
 - Color by LOC or by file extension; hover for path + lines; click to open the file.
