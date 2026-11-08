@@ -1,6 +1,8 @@
 # Code City
 
-![Code City](https://github.com/heilingbrunner/vscode-code-city/blob/main/screenshot.png?raw=true)
+![Code City](https://github.com/heilingbrunner/vscode-code-city/blob/main/screenshot-1.png?raw=true)
+
+![Code City](https://github.com/heilingbrunner/vscode-code-city/blob/main/screenshot-2.png?raw=true)
 
 VS Code extension that renders the open folder as a 3D city.
 
