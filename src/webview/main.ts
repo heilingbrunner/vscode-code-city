@@ -73,9 +73,9 @@ shadowsInput.addEventListener('change', () => {
 
 // ---- procedural building textures (facade variants + roof, one atlas) ----
 const VARIANTS = 4;
-const FACADE_STYLES: FacadeStyle[] = ['windows', 'panels', 'neon'];
+const FACADE_STYLES: FacadeStyle[] = ['panels', 'windows', 'neon'];
 let atlas: FacadeAtlas | null = null; // created lazily on first build; regenerated on style change
-let facadeStyle: FacadeStyle = FACADE_STYLES.includes(vscode.getState()?.facade) ? vscode.getState().facade : 'windows';
+let facadeStyle: FacadeStyle = FACADE_STYLES.includes(vscode.getState()?.facade) ? vscode.getState().facade : 'panels';
 const texturesInput = $<HTMLInputElement>('textures');
 texturesInput.checked = vscode.getState()?.textures ?? true;
 function applyTextures() {
@@ -129,7 +129,6 @@ const heightOf = (loc: number) => {
 interface Palette {
   bg: string;                             // scene background ("sky")
   street: string;                         // ground slab: shows through the streets (dark gray in every scheme, light and dark themes)
-  district: [string, string];             // district slabs, from top-level folders to the deepest ones
   ramp: [string, string, string];         // buildings in "LOC" mode: few -> some -> many lines
   extHue: number; extSpan: number;        // buildings in "Extension" mode: hues used, in degrees
   extSat: number; extLight: number;
@@ -138,37 +137,37 @@ interface Palette {
 const SCHEMES: Record<string, { dark: Palette; light: Palette }> = {
   // cool steel and glass; ice blue buildings with a signal-orange peak
   Berlin: {
-    dark:  { bg: '#000000', street: '#464a51', district: ['#3b4a5c', '#6b7f96'], ramp: ['#8fb3d9', '#4f86d6', '#ff5a36'],
+    dark:  { bg: '#000000', street: '#464a51', ramp: ['#8fb3d9', '#4f86d6', '#ff5a36'],
              extHue: 190, extSpan: 170, extSat: 0.5, extLight: 0.58, sky: '#dfe9f5', ground: '#2a3340', sun: '#ffffff' },
-    light: { bg: '#ffffff', street: '#464a51', district: ['#d5dde7', '#9eb0c4'], ramp: ['#7ea3cf', '#2f6bc2', '#e0431c'],
+    light: { bg: '#ffffff', street: '#464a51', ramp: ['#7ea3cf', '#2f6bc2', '#e0431c'],
              extHue: 190, extSpan: 170, extSat: 0.55, extLight: 0.5, sky: '#ffffff', ground: '#8794a5', sun: '#ffffff' },
   },
   // warm brick and fog; cream buildings burning down to crimson
   London: {
-    dark:  { bg: '#000000', street: '#4b4541', district: ['#6a3b2d', '#a97a57'], ramp: ['#efe0bd', '#dd7b34', '#8d1425'],
+    dark:  { bg: '#000000', street: '#4b4541', ramp: ['#efe0bd', '#dd7b34', '#8d1425'],
              extHue: 5, extSpan: 55, extSat: 0.55, extLight: 0.55, sky: '#f2dcc4', ground: '#3a2a22', sun: '#ffe9cf' },
-    light: { bg: '#ffffff', street: '#4b4541', district: ['#e1b59d', '#b98866'], ramp: ['#c9ad6a', '#cf6a22', '#7d1020'],
+    light: { bg: '#ffffff', street: '#4b4541', ramp: ['#c9ad6a', '#cf6a22', '#7d1020'],
              extHue: 5, extSpan: 55, extSat: 0.5, extLight: 0.46, sky: '#fff3e3', ground: '#9c8372', sun: '#fff1dd' },
   },
   // night city: black streets, violet districts, neon buildings
   Tokyo: {
-    dark:  { bg: '#000000', street: '#413d53', district: ['#5a3bd6', '#d56bff'], ramp: ['#7dfff6', '#ff7df0', '#fffb7a'],
+    dark:  { bg: '#000000', street: '#413d53', ramp: ['#7dfff6', '#ff7df0', '#fffb7a'],
              extHue: 0, extSpan: 360, extSat: 1, extLight: 0.7, sky: '#d2c4ff', ground: '#3a1f8a', sun: '#ff9bf0' },
-    light: { bg: '#ffffff', street: '#413d53', district: ['#cdb8ff', '#a05cff'], ramp: ['#00c2d6', '#e600c0', '#f0c800'],
+    light: { bg: '#ffffff', street: '#413d53', ramp: ['#00c2d6', '#e600c0', '#f0c800'],
              extHue: 0, extSpan: 360, extSat: 1, extLight: 0.5, sky: '#ffffff', ground: '#8f84c8', sun: '#ffd6fb' },
   },
   // desert sun: dark earth streets, bright sand districts, turquoise to terracotta buildings
   Cairo: {
-    dark:  { bg: '#000000', street: '#4e4639', district: ['#c19a5b', '#e6c88e'], ramp: ['#16c4b0', '#f3c34b', '#b3381a'],
+    dark:  { bg: '#000000', street: '#4e4639', ramp: ['#16c4b0', '#f3c34b', '#b3381a'],
              extHue: 20, extSpan: 170, extSat: 0.6, extLight: 0.55, sky: '#ffe2b0', ground: '#5a4326', sun: '#ffd28a' },
-    light: { bg: '#ffffff', street: '#4e4639', district: ['#ecd7a4', '#d1ad6c'], ramp: ['#0e9e8c', '#e0a820', '#a22f12'],
+    light: { bg: '#ffffff', street: '#4e4639', ramp: ['#0e9e8c', '#e0a820', '#a22f12'],
              extHue: 20, extSpan: 170, extSat: 0.6, extLight: 0.48, sky: '#fff5dc', ground: '#bfa06a', sun: '#ffe1a8' },
   },
 };
 let scheme = ((n) => (n in SCHEMES ? n : 'Berlin'))(String(vscode.getState()?.scheme ?? 'Berlin'));
 
 interface ParsedPalette {
-  bg: THREE.Color; street: THREE.Color; district: [THREE.Color, THREE.Color]; ramp: [THREE.Color, THREE.Color, THREE.Color];
+  bg: THREE.Color; street: THREE.Color; ramp: [THREE.Color, THREE.Color, THREE.Color];
   extHue: number; extSpan: number; extSat: number; extLight: number; sky: THREE.Color; ground: THREE.Color; sun: THREE.Color;
 }
 const parsedPalettes = new Map<string, ParsedPalette>();
@@ -178,7 +177,7 @@ function palette(): ParsedPalette {
   if (!p) {
     const src = SCHEMES[scheme][darkTheme ? 'dark' : 'light'];
     const c = (h: string) => new THREE.Color(h);
-    p = { bg: c(src.bg), street: c(src.street), district: [c(src.district[0]), c(src.district[1])],
+    p = { bg: c(src.bg), street: c(src.street),
           ramp: [c(src.ramp[0]), c(src.ramp[1]), c(src.ramp[2])],
           extHue: src.extHue, extSpan: src.extSpan, extSat: src.extSat, extLight: src.extLight,
           sky: c(src.sky), ground: c(src.ground), sun: c(src.sun) };
@@ -215,6 +214,10 @@ function extColor(ext: string): THREE.Color {
   return c;
 }
 
+/** District "stair" slab colors: odd nesting depths get the gray, even depths a bit darker gray. */
+const STAIR_GRAY = new THREE.Color('#7f838c');
+const STAIR_GRAY_DARK = new THREE.Color('#72767d');
+
 function build() {
   scene.remove(group);
   group.traverse(o => {
@@ -228,14 +231,12 @@ function build() {
   applyTheme();
   applyScene();
 
-  // ground and districts: flat slabs; the root slab is the street color, districts blend by nesting depth
+  // ground and districts: flat slabs; the root slab is the street color, and each
+  // nesting level (stair case) alternates gray / darker gray so the steps stand out
   const pal = palette();
-  const maxDepth = Math.max(1, ...boxes.map(b => b.depth));
   const dirs = boxes.filter(b => b.kind === 'dir' && b.w > 0.5 && b.d > 0.5);
   for (const d of dirs) {
-    const color = d.depth === 0
-      ? pal.street
-      : pal.district[0].clone().lerp(pal.district[1], maxDepth > 1 ? (d.depth - 1) / (maxDepth - 1) : 0);
+    const color = d.depth === 0 ? pal.street : (d.depth % 2 ? STAIR_GRAY : STAIR_GRAY_DARK);
     const slab = new THREE.Mesh(new THREE.BoxGeometry(d.w, 1, d.d), new THREE.MeshLambertMaterial({ color }));
     slab.castShadow = slab.receiveShadow = true;
     slab.position.set(d.x + d.w / 2, d.depth * 1 + 0.5 - 1, d.z + d.d / 2);
