@@ -50,7 +50,10 @@ export async function scan(
   const counts: Record<string, number> = {};
   let done = 0;
   const maxBytes = maxFileSizeKB * 1024;
-  const queue = uris.slice();
+  // Sort descending because pop() takes from the end: files then enter the tree
+  // in ascending path order, making the result deterministic regardless of
+  // worker completion order (and squarify's stable-sort tie-breaking too).
+  const queue = uris.slice().sort((a, b) => (a.path < b.path ? 1 : a.path > b.path ? -1 : 0));
   const worker = async () => {
     for (let u = queue.pop(); u && !token?.isCancellationRequested; u = queue.pop()) {
       try {

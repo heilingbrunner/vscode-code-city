@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { listFiles, relPath, scan, type ScanProgress } from './scanner.ts';
-import { ALL_FILES, AUTO, folderExcludeGlobs, matchesProject, parseProjectTypes, resolveProject } from './projects.ts';
+import { ALL_FILES, AUTO, folderExcludeGlobs, globToRegExp, matchesProject, parseProjectTypes, resolveProject } from './projects.ts';
 
 let panel: vscode.WebviewPanel | undefined;
 let watcher: vscode.FileSystemWatcher | undefined;
@@ -134,15 +134,27 @@ export function activate(ctx: vscode.ExtensionContext) {
     watcher?.dispose();
     watcher = undefined;
     if (!rootUri) return;
-    watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(rootUri, '**/*'));
-    watcher.onDidCreate(scheduleRefresh); watcher.onDidDelete(scheduleRefresh); watcher.onDidChange(scheduleRefresh);
+    const root = rootUri;
+    // Ignore events inside excluded folders (node_modules, .git, dist, …):
+    // they would otherwise each trigger a full rescan of the whole city.
+    const excludeRes = cfg().exclude.map(globToRegExp);
+    const onFsEvent = (u: vscode.Uri) => {
+      if (excludeRes.some(re => re.test(relPath(root, u)))) return;
+      scheduleRefresh();
+    };
+    watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(root, '**/*'));
+    watcher.onDidCreate(onFsEvent); watcher.onDidDelete(onFsEvent); watcher.onDidChange(onFsEvent);
   };
 
   /** Resolve the explorer's right-clicked resource (or undefined when run from the palette) to a folder. */
   const folderFrom = async (arg: unknown): Promise<vscode.Uri | undefined> => {
     if (!(arg instanceof vscode.Uri)) return undefined;
-    const stat = await vscode.workspace.fs.stat(arg);
-    return stat.type & vscode.FileType.Directory ? arg : vscode.Uri.joinPath(arg, '..');
+    try {
+      const stat = await vscode.workspace.fs.stat(arg);
+      return stat.type & vscode.FileType.Directory ? arg : vscode.Uri.joinPath(arg, '..');
+    } catch {
+      return undefined; // the resource vanished between click and handler
+    }
   };
 
   // `arg` is the explorer node when run from the context menu.
@@ -187,7 +199,10 @@ export function activate(ctx: vscode.ExtensionContext) {
     vscode.commands.registerCommand('codeCity.show', show),
     vscode.commands.registerCommand('codeCity.selectProject', selectProject),
     vscode.commands.registerCommand('codeCity.refresh', () => (panel ? render() : show())),
-    vscode.workspace.onDidChangeConfiguration(e => { if (e.affectsConfiguration('codeCity')) scheduleRefresh(); }),
+    vscode.workspace.onDidChangeConfiguration(e => {
+      // rebuild the watcher too, so changed exclude/ignoredFolders settings apply immediately
+      if (e.affectsConfiguration('codeCity')) { watchRoot(); scheduleRefresh(); }
+    }),
   );
 }
 

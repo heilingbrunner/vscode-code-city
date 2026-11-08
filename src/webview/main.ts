@@ -188,7 +188,13 @@ function extColor(ext: string): THREE.Color {
 
 function build() {
   scene.remove(group);
-  group.traverse(o => { const m = o as THREE.Mesh; m.geometry?.dispose(); });
+  group.traverse(o => {
+    const m = o as THREE.Mesh;
+    m.geometry?.dispose();
+    const mat = m.material as THREE.Material | THREE.Material[] | undefined;
+    if (Array.isArray(mat)) mat.forEach(x => x.dispose());
+    else mat?.dispose();
+  });
   group = new THREE.Group();
   applyTheme();
   applyScene();

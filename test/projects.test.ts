@@ -57,6 +57,19 @@ test('folderExcludeGlobs: generated globs match files inside the folder only', (
   assert.ok(!re.test('a/.gitignore'));
 });
 
+test('glob: exclude-style patterns match at any depth (used by the file watcher filter)', () => {
+  const res = ['**/node_modules/**', '**/dist/**', '**/*.min.js', '**/*.map'].map(globToRegExp);
+  const excluded = (p: string) => res.some(r => r.test(p));
+  assert.ok(excluded('node_modules/pkg/index.js'));
+  assert.ok(excluded('a/b/node_modules/pkg/index.js'));
+  assert.ok(excluded('dist/out/bundle.js'));
+  assert.ok(excluded('src/app.min.js'));
+  assert.ok(excluded('a/b/c.map'));
+  assert.ok(!excluded('src/index.ts'));
+  assert.ok(!excluded('node_modulesx/file.js'));
+  assert.ok(!excluded('distfile.js'));
+});
+
 test('null / undefined settings give no project types', () => {
   assert.deepEqual(parseProjectTypes(undefined), []);
   assert.deepEqual(parseProjectTypes(null), []);
