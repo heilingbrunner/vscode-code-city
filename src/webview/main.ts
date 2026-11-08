@@ -11,6 +11,7 @@ const tip = $('tip');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(devicePixelRatio);
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const stage = document.getElementById('stage') as HTMLElement;
 stage.insertBefore(renderer.domElement, stage.firstChild);
 
@@ -39,11 +40,35 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(500, 0, 500);
 controls.enableDamping = true;
 
-const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, 1.1);
+const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, 0.8);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-sun.position.set(600, 1500, 400);
-scene.add(sun);
+const SUN_OFFSET = new THREE.Vector3(600, 1500, 400);
+const SUN_AZIMUTH = Math.PI + 0.4; // sun's angle relative to the camera: behind the city (slightly to the side), so shadows fall toward the viewer
+let sunDistance = SUN_OFFSET.length();
+/** Keep the sun at a fixed angle to the camera, so shadows stay put on screen while the city is rotated. */
+function aimSun() {
+  const az = controls.getAzimuthalAngle() + SUN_AZIMUTH;
+  const flat = Math.hypot(SUN_OFFSET.x, SUN_OFFSET.z);
+  sun.position.set(Math.sin(az) * flat, SUN_OFFSET.y, Math.cos(az) * flat).normalize().multiplyScalar(sunDistance).add(sun.target.position);
+}
+sun.position.copy(SUN_OFFSET);
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.intensity = 1; // full-strength shadows: depth without hiding anything
+sun.shadow.bias = -0.0005;
+sun.shadow.normalBias = 0.5;
+scene.add(sun, sun.target);
+
+const shadowsInput = $<HTMLInputElement>('shadows');
+shadowsInput.checked = vscode.getState()?.shadows ?? true;
+function applyShadows() {
+  renderer.shadowMap.enabled = sun.castShadow = shadowsInput.checked;
+  group.traverse(o => { const m = o as THREE.Mesh; if (m.material) (m.material as THREE.Material).needsUpdate = true; });
+}
+shadowsInput.addEventListener('change', () => {
+  vscode.setState({ ...vscode.getState(), shadows: shadowsInput.checked });
+  applyShadows();
+});
 
 let tree: DirNode | null = null;
 let boxes: Box[] = [];
@@ -177,18 +202,40 @@ function build() {
       ? pal.street
       : pal.district[0].clone().lerp(pal.district[1], maxDepth > 1 ? (d.depth - 1) / (maxDepth - 1) : 0);
     const slab = new THREE.Mesh(new THREE.BoxGeometry(d.w, 1, d.d), new THREE.MeshLambertMaterial({ color }));
+    slab.castShadow = slab.receiveShadow = true;
     slab.position.set(d.x + d.w / 2, d.depth * 1 + 0.5 - 1, d.z + d.d / 2);
     group.add(slab);
   }
 
   files = boxes.filter(b => b.kind === 'file' && b.w > 0.2 && b.d > 0.2);
   mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial(), files.length);
+  mesh.castShadow = mesh.receiveShadow = true;
   recolorAndScale();
   group.add(mesh);
   scene.add(group);
+  fitShadow();
+  applyShadows();
 
   const total = files.reduce((s, f) => s + f.loc, 0);
   $('stats').textContent = `${files.length} files · ${total.toLocaleString()} LOC`;
+}
+
+/** Size the sun's shadow frustum to the layout plus the tallest building, and aim the sun at the city's center. */
+function fitShadow() {
+  if (!boxes.length) return;
+  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+  for (const b of boxes) { x0 = Math.min(x0, b.x); z0 = Math.min(z0, b.z); x1 = Math.max(x1, b.x + b.w); z1 = Math.max(z1, b.z + b.d); }
+  const center = new THREE.Vector3((x0 + x1) / 2, 0, (z0 + z1) / 2);
+  const tallest = Math.max(1, ...files.map(f => heightOf(f.loc) + f.depth));
+  const radius = Math.hypot(x1 - x0, z1 - z0) / 2 + tallest; // generous: covers shadows cast off the edge
+  sun.target.position.copy(center);
+  sunDistance = radius * 2 + tallest;
+  aimSun();
+  const cam = sun.shadow.camera;
+  cam.left = -radius; cam.right = radius; cam.top = radius; cam.bottom = -radius;
+  cam.near = 1; cam.far = radius * 4 + tallest * 2;
+  cam.updateProjectionMatrix();
+  sun.shadow.map?.dispose(); sun.shadow.map = null; // frustum changed: rebuild lazily
 }
 
 function recolorAndScale() {
@@ -351,7 +398,6 @@ window.addEventListener('message', e => {
   sel.value = msg.activeProject;
   heightScale = msg.heightScale;
   $<HTMLSelectElement>('scaleMode').value = heightScale;
-  $('title').textContent = `Code City — ${msg.rootName}`;
   relayout();
   const fitKey = `${msg.rootKey}|${msg.activeProject}`;
   if (fitKey !== lastFitKey) { // new root or project type: frame the whole city (not on plain refreshes)
@@ -379,6 +425,7 @@ resize();
 (function loop() {
   requestAnimationFrame(loop);
   controls.update();
+  aimSun();
   renderer.render(scene, camera);
 })();
 

@@ -116,8 +116,9 @@ function html(webview: vscode.Webview, ctx: vscode.ExtensionContext): string {
 </style></head><body>
 <div id="ui"><b id="title">Code City</b>
   <label>Project <select id="projectMode"></select></label>
-  <label title="Street width between districts">Streets <input id="street" type="range" min="0" max="24" step="1" value="4" style="width:80px"></label>
-  <label>Color <select id="colorMode"><option value="loc">LOC</option><option value="ext">Extension</option></select></label>
+  <label title="Street width between districts">Streets <input id="street" type="range" min="0" max="24" step="1" value="4" style="width:60px"></label>
+  <label title="Soft sun shadows"><input id="shadows" type="checkbox" checked> Shadows</label>
+  <label>Color <select id="colorMode"><option value="loc">LOC</option><option value="ext" selected>Extension</option></select></label>
   <label>Height <select id="scaleMode"><option>linear</option><option>sqrt</option><option>log</option></select></label>
   <label>Scheme <select id="scheme"></select></label>
   <span id="stats"></span></div>
