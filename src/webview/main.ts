@@ -60,6 +60,15 @@ sun.shadow.bias = -0.0005;
 sun.shadow.normalBias = 0.5;
 scene.add(sun, sun.target);
 
+// distant fill light from behind the camera: lights the faces the viewer actually
+// sees (they otherwise get only the hemisphere light); no shadows, follows the camera
+const fill = new THREE.DirectionalLight(0xffffff, 1.0);
+scene.add(fill, fill.target);
+function aimFill() {
+  fill.position.copy(camera.position);
+  fill.target.position.copy(controls.target);
+}
+
 const shadowsInput = $<HTMLInputElement>('shadows');
 shadowsInput.checked = vscode.getState()?.shadows ?? true;
 function applyShadows() {
@@ -193,6 +202,7 @@ function applyScene() {
   hemi.color.copy(p.sky);
   hemi.groundColor.copy(p.ground);
   sun.color.copy(p.sun);
+  fill.color.copy(p.sky); // tint the fill with the scheme's sky color
 }
 applyScene();
 
@@ -504,6 +514,7 @@ resize();
   requestAnimationFrame(loop);
   controls.update();
   aimSun();
+  aimFill();
   renderer.render(scene, camera);
 })();
 
