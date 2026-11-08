@@ -84,7 +84,7 @@ function html(webview: vscode.Webview, ctx: vscode.ExtensionContext): string {
            border-top-color:var(--vscode-progressBar-background,#0e70c0);animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   #busy.failed .spinner{display:none}
-  body{--side-w:176px;--bar-h:26px}
+  body{--side-w:240px;--bar-h:26px}
   body.side-collapsed{--side-w:22px}
   #types{position:fixed;top:var(--bar-h);bottom:0;left:0;width:var(--side-w);z-index:20;box-sizing:border-box;display:flex;flex-direction:column;
          background:var(--vscode-sideBar-background,var(--vscode-editorWidget-background));
@@ -97,10 +97,10 @@ function html(webview: vscode.Webview, ctx: vscode.ExtensionContext): string {
   body.side-collapsed #typesArrow{transform:rotate(180deg)}
   body.side-collapsed #typeList{display:none}
   #typeList{display:flex;flex-direction:column;gap:2px;padding:0 8px 8px;overflow-y:auto;flex:1 1 auto;min-height:0}
-  .trow{display:flex;align-items:center;gap:6px}
-  .pill{flex:0 0 auto;box-sizing:border-box;min-width:36px;padding:1px 6px;border-radius:3px;color:#fff;text-shadow:0 0 2px rgba(0,0,0,.6);
-        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tcount{margin-left:auto;font-variant-numeric:tabular-nums;opacity:.85}
+  .trow{position:relative;display:flex;align-items:center;gap:6px;height:18px}
+  .pill{position:absolute;left:0;top:2px;bottom:2px;border-radius:3px}
+  .tlabel{position:relative;z-index:1;flex:0 1 auto;min-width:0;padding:0 6px;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tcount{position:relative;z-index:1;margin-left:auto;font-variant-numeric:tabular-nums;opacity:.85}
   #tip{position:fixed;pointer-events:none;display:none;padding:4px 8px;border-radius:4px;font-size:12px;
        background:var(--vscode-editorHoverWidget-background);border:1px solid var(--vscode-editorHoverWidget-border);white-space:pre}
   #ui{position:fixed;top:0;left:0;right:0;height:var(--bar-h);z-index:30;box-sizing:border-box;padding:0 8px;font-size:11px;
@@ -119,7 +119,7 @@ function html(webview: vscode.Webview, ctx: vscode.ExtensionContext): string {
              border:1px solid var(--vscode-button-secondaryBorder,var(--vscode-dropdown-border))}
   #ui button:hover{background:var(--vscode-button-secondaryHoverBackground,var(--vscode-toolbar-hoverBackground,rgba(128,128,128,.2)))}
 </style></head><body>
-<div id="ui"><b id="title">Code City</b>
+<div id="ui">
   <label>Project <select id="projectMode"></select></label>
   <button id="fit" title="Zoom out to fit the whole city, keeping the current view direction">⤢ Fit</button>
   <label title="Street width between districts">Streets <input id="street" type="range" min="0" max="24" step="1" value="12" style="width:60px"></label>

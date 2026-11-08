@@ -447,16 +447,19 @@ function renderTypes(counts: Record<string, number>, status: string) {
   $('typeList').replaceChildren(...rows.map(([ext, n]) => {
     const row = document.createElement('div');
     row.className = 'trow';
+    row.title = `${n.toLocaleString()} of ${total.toLocaleString()} files`;
     const pill = document.createElement('span');
     pill.className = 'pill';
-    pill.textContent = ext || '(none)';
     pill.style.background = '#' + extColor(ext).getHexString();
-    pill.style.width = `${Math.max(36, Math.round((n / max) * 100))}px`; // bar length ~ share of the largest type
-    pill.title = `${n.toLocaleString()} of ${total.toLocaleString()} files`;
+    // sqrt scale keeps small counts distinguishable; the label is overlaid on the bar, not clipped by it
+    pill.style.width = `${Math.max(6, Math.round(Math.sqrt(n / max) * 170))}px`;
+    const label = document.createElement('span');
+    label.className = 'tlabel';
+    label.textContent = ext || '(none)'; // full extension name; CSS only clips if it can't fit the panel
     const count = document.createElement('span');
     count.className = 'tcount';
     count.textContent = n.toLocaleString();
-    row.append(pill, count);
+    row.append(pill, label, count);
     return row;
   }));
 }

@@ -3,6 +3,14 @@
 All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- File types panel (left sidebar) reworked: wider panel (176px → 240px) and longer bars (max 100px → 170px) for better scaling
+- File type bars are now decoupled from their label and scale with the square root of the share of the largest type, so small counts (e.g. 2 files) get visibly smaller bars than 72 / 109 / 715 instead of all clamping to the same width
+- File extensions in the panel show their full name in black on the colored bar (no more 8-character "..." truncation)
+- Removed the "Code City" title from the top bar — the editor tab already shows it
+
 ## [0.0.2]
 
 ### Added
