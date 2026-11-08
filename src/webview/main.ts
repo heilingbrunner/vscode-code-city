@@ -128,7 +128,7 @@ const heightOf = (loc: number) => {
 // ---- color schemes ----
 interface Palette {
   bg: string;                             // scene background ("sky")
-  street: string;                         // ground slab: shows through the streets
+  street: string;                         // ground slab: shows through the streets (dark gray in every scheme, light and dark themes)
   district: [string, string];             // district slabs, from top-level folders to the deepest ones
   ramp: [string, string, string];         // buildings in "LOC" mode: few -> some -> many lines
   extHue: number; extSpan: number;        // buildings in "Extension" mode: hues used, in degrees
@@ -138,30 +138,30 @@ interface Palette {
 const SCHEMES: Record<string, { dark: Palette; light: Palette }> = {
   // cool steel and glass; ice blue buildings with a signal-orange peak
   Berlin: {
-    dark:  { bg: '#000000', street: '#07090c', district: ['#3b4a5c', '#6b7f96'], ramp: ['#8fb3d9', '#4f86d6', '#ff5a36'],
+    dark:  { bg: '#000000', street: '#464a51', district: ['#3b4a5c', '#6b7f96'], ramp: ['#8fb3d9', '#4f86d6', '#ff5a36'],
              extHue: 190, extSpan: 170, extSat: 0.5, extLight: 0.58, sky: '#dfe9f5', ground: '#2a3340', sun: '#ffffff' },
-    light: { bg: '#ffffff', street: '#b8c2ce', district: ['#d5dde7', '#9eb0c4'], ramp: ['#7ea3cf', '#2f6bc2', '#e0431c'],
+    light: { bg: '#ffffff', street: '#464a51', district: ['#d5dde7', '#9eb0c4'], ramp: ['#7ea3cf', '#2f6bc2', '#e0431c'],
              extHue: 190, extSpan: 170, extSat: 0.55, extLight: 0.5, sky: '#ffffff', ground: '#8794a5', sun: '#ffffff' },
   },
   // warm brick and fog; cream buildings burning down to crimson
   London: {
-    dark:  { bg: '#000000', street: '#0c0807', district: ['#6a3b2d', '#a97a57'], ramp: ['#efe0bd', '#dd7b34', '#8d1425'],
+    dark:  { bg: '#000000', street: '#4b4541', district: ['#6a3b2d', '#a97a57'], ramp: ['#efe0bd', '#dd7b34', '#8d1425'],
              extHue: 5, extSpan: 55, extSat: 0.55, extLight: 0.55, sky: '#f2dcc4', ground: '#3a2a22', sun: '#ffe9cf' },
-    light: { bg: '#ffffff', street: '#b4a392', district: ['#e1b59d', '#b98866'], ramp: ['#c9ad6a', '#cf6a22', '#7d1020'],
+    light: { bg: '#ffffff', street: '#4b4541', district: ['#e1b59d', '#b98866'], ramp: ['#c9ad6a', '#cf6a22', '#7d1020'],
              extHue: 5, extSpan: 55, extSat: 0.5, extLight: 0.46, sky: '#fff3e3', ground: '#9c8372', sun: '#fff1dd' },
   },
   // night city: black streets, violet districts, neon buildings
   Tokyo: {
-    dark:  { bg: '#000000', street: '#000000', district: ['#5a3bd6', '#d56bff'], ramp: ['#7dfff6', '#ff7df0', '#fffb7a'],
+    dark:  { bg: '#000000', street: '#413d53', district: ['#5a3bd6', '#d56bff'], ramp: ['#7dfff6', '#ff7df0', '#fffb7a'],
              extHue: 0, extSpan: 360, extSat: 1, extLight: 0.7, sky: '#d2c4ff', ground: '#3a1f8a', sun: '#ff9bf0' },
-    light: { bg: '#ffffff', street: '#8f84d6', district: ['#cdb8ff', '#a05cff'], ramp: ['#00c2d6', '#e600c0', '#f0c800'],
+    light: { bg: '#ffffff', street: '#413d53', district: ['#cdb8ff', '#a05cff'], ramp: ['#00c2d6', '#e600c0', '#f0c800'],
              extHue: 0, extSpan: 360, extSat: 1, extLight: 0.5, sky: '#ffffff', ground: '#8f84c8', sun: '#ffd6fb' },
   },
   // desert sun: dark earth streets, bright sand districts, turquoise to terracotta buildings
   Cairo: {
-    dark:  { bg: '#000000', street: '#6a4a24', district: ['#c19a5b', '#e6c88e'], ramp: ['#16c4b0', '#f3c34b', '#b3381a'],
+    dark:  { bg: '#000000', street: '#4e4639', district: ['#c19a5b', '#e6c88e'], ramp: ['#16c4b0', '#f3c34b', '#b3381a'],
              extHue: 20, extSpan: 170, extSat: 0.6, extLight: 0.55, sky: '#ffe2b0', ground: '#5a4326', sun: '#ffd28a' },
-    light: { bg: '#ffffff', street: '#a97f45', district: ['#ecd7a4', '#d1ad6c'], ramp: ['#0e9e8c', '#e0a820', '#a22f12'],
+    light: { bg: '#ffffff', street: '#4e4639', district: ['#ecd7a4', '#d1ad6c'], ramp: ['#0e9e8c', '#e0a820', '#a22f12'],
              extHue: 20, extSpan: 170, extSat: 0.6, extLight: 0.48, sky: '#fff5dc', ground: '#bfa06a', sun: '#ffe1a8' },
   },
 };
