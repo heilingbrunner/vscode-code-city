@@ -1,5 +1,7 @@
 # Code City
 
+![Code City](https://github.com/heilingbrunner/vscode-code-city/blob/main/screenshot.png?raw=true)
+
 VS Code extension that renders the open folder as a 3D city.
 
 - **Folder → district** (nested plots, squarified treemap by LOC)
