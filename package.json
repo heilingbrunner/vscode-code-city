@@ -11,7 +11,7 @@
     "type": "git",
     "url": "https://github.com/heilingbrunner/vscode-code-city.git"
   },
-  "displayName": "Code City",
+  "displayName": "Code-City",
   "description": "Visualize code complexity (file length, folder structure) as a 3D city.",
   "version": "0.0.1",
   "engines": {
