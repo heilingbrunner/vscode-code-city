@@ -329,17 +329,37 @@ function fitCamera() {
   let maxH = 1;
   for (const f of files) maxH = Math.max(maxH, f.depth + heightOf(f.loc));
   const center = new THREE.Vector3(root.x + root.w / 2, maxH / 2, root.z + root.d / 2);
-  const radius = Math.hypot(root.w, maxH, root.d) / 2; // bounding sphere of the whole city
   const vFov = THREE.MathUtils.degToRad(camera.fov);
   const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
-  const dist = (radius / Math.sin(Math.min(vFov, hFov) / 2)) * 1.05;
   const dir = camera.position.clone().sub(controls.target).normalize(); // keep the current viewing angle
+  // Exact best fit: project the 8 corners of the city box onto the camera's screen axes
+  // (right/up); the required distance makes the silhouette fit the frustum cross-section
+  // in both axes — much tighter than a bounding sphere/circle for a wide, flat city.
+  const fwd = dir.clone().negate();
+  const up0 = Math.abs(fwd.y) > 0.99 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+  const right = new THREE.Vector3().crossVectors(fwd, up0).normalize();
+  const up = new THREE.Vector3().crossVectors(right, fwd).normalize();
+  const hx = root.w / 2, hy = maxH / 2, hz = root.d / 2;
+  let halfW = 0, halfH = 0;
+  for (const sx of [-hx, hx]) for (const sy of [-hy, hy]) for (const sz of [-hz, hz]) {
+    const p = new THREE.Vector3(sx, sy, sz);
+    halfW = Math.max(halfW, Math.abs(p.dot(right)));
+    halfH = Math.max(halfH, Math.abs(p.dot(up)));
+  }
+  const dist = Math.max(halfW / Math.tan(hFov / 2), halfH / Math.tan(vFov / 2)) * 1.03;
   controls.target.copy(center);
   camera.position.copy(center).addScaledVector(dir, dist);
   camera.far = Math.max(20000, dist * 4);
   camera.updateProjectionMatrix();
   controls.update();
 }
+
+/** Zoom out so the whole city fits, keeping the current view direction (fitCamera preserves it). */
+function fitCity() {
+  pendingFit = false; // user took over the camera
+  fitCamera();
+}
+$('fit').addEventListener('click', fitCity);
 
 // interaction
 const ray = new THREE.Raycaster();
