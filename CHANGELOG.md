@@ -3,6 +3,8 @@
 All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+Everything under [Unreleased] comes from a code review of the 0.0.1 codebase (findings plus follow-up tweaks).
+
 ## [Unreleased]
 
 ### Added
