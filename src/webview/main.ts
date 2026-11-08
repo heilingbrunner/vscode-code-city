@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { extOf, layoutTree } from '../layout';
 import type { Box, DirNode } from '../types';
+import { createFacadeAtlas, remapBoxUVs, variantOf, type FacadeAtlas, type FacadeStyle } from './textures';
 
 declare function acquireVsCodeApi(): { postMessage(m: unknown): void; getState(): any; setState(s: unknown): void };
 const vscode = acquireVsCodeApi();
@@ -70,6 +71,34 @@ shadowsInput.addEventListener('change', () => {
   applyShadows();
 });
 
+// ---- procedural building textures (facade variants + roof, one atlas) ----
+const VARIANTS = 4;
+const FACADE_STYLES: FacadeStyle[] = ['windows', 'panels', 'neon'];
+let atlas: FacadeAtlas | null = null; // created lazily on first build; regenerated on style change
+let facadeStyle: FacadeStyle = FACADE_STYLES.includes(vscode.getState()?.facade) ? vscode.getState().facade : 'windows';
+const texturesInput = $<HTMLInputElement>('textures');
+texturesInput.checked = vscode.getState()?.textures ?? true;
+function applyTextures() {
+  for (const im of meshes) {
+    (im.material as THREE.MeshLambertMaterial).map = texturesInput.checked ? atlas?.texture ?? null : null;
+    (im.material as THREE.Material).needsUpdate = true;
+  }
+}
+texturesInput.addEventListener('change', () => {
+  vscode.setState({ ...vscode.getState(), textures: texturesInput.checked });
+  applyTextures();
+});
+const facadeSelect = $<HTMLSelectElement>('facade');
+facadeSelect.replaceChildren(...FACADE_STYLES.map(s => new Option(s, s)));
+facadeSelect.value = facadeStyle;
+facadeSelect.addEventListener('change', () => {
+  facadeStyle = facadeSelect.value as FacadeStyle;
+  vscode.setState({ ...vscode.getState(), facade: facadeStyle });
+  atlas?.texture.dispose(); // release the old GPU texture
+  atlas = null;
+  relayout(); // rebuilds the meshes with a fresh atlas
+});
+
 let tree: DirNode | null = null;
 let boxes: Box[] = [];
 const streetInput = $<HTMLInputElement>('street');
@@ -89,7 +118,7 @@ streetInput.addEventListener('input', () => {
 });
 let files: Box[] = [];
 let group = new THREE.Group();
-let mesh: THREE.InstancedMesh | null = null;
+let meshes: THREE.InstancedMesh[] = []; // one per facade variant; userData.files maps instanceId -> Box
 let heightScale = 'sqrt';
 const heightOf = (loc: number) => {
   const k = 1.2;
@@ -214,10 +243,22 @@ function build() {
   }
 
   files = boxes.filter(b => b.kind === 'file' && b.w > 0.2 && b.d > 0.2);
-  mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial(), files.length);
-  mesh.castShadow = mesh.receiveShadow = true;
+  if (!atlas) atlas = createFacadeAtlas(facadeStyle, VARIANTS, renderer.capabilities.getMaxAnisotropy());
+  meshes = [];
+  const buckets: Box[][] = Array.from({ length: VARIANTS }, () => []);
+  for (const f of files) buckets[variantOf(f.path, VARIANTS)].push(f);
+  buckets.forEach((bucket, v) => {
+    if (!bucket.length) return;
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    remapBoxUVs(geo, atlas!.facadeCells[v], atlas!.roofCell, atlas!.baseCell);
+    const mat = new THREE.MeshLambertMaterial({ map: texturesInput.checked ? atlas!.texture : null });
+    const im = new THREE.InstancedMesh(geo, mat, bucket.length);
+    im.castShadow = im.receiveShadow = true;
+    im.userData.files = bucket;
+    meshes.push(im);
+    group.add(im);
+  });
   recolorAndScale();
-  group.add(mesh);
   scene.add(group);
   fitShadow();
   applyShadows();
@@ -245,19 +286,21 @@ function fitShadow() {
 }
 
 function recolorAndScale() {
-  if (!mesh) return;
   const mode = $<HTMLSelectElement>('colorMode').value;
   const m = new THREE.Matrix4();
-  files.forEach((f, i) => {
-    const h = heightOf(f.loc);
-    const sx = f.w * 0.85, sz = f.d * 0.85;
-    m.compose(new THREE.Vector3(f.x + f.w / 2, f.depth + h / 2, f.z + f.d / 2), new THREE.Quaternion(), new THREE.Vector3(sx, h, sz));
-    mesh!.setMatrixAt(i, m);
-    mesh!.setColorAt(i, mode === 'ext' ? extColor(f.ext) : locColor(f.loc));
-  });
-  mesh.instanceMatrix.needsUpdate = true;
-  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  mesh.computeBoundingSphere();
+  for (const im of meshes) {
+    const bucket = im.userData.files as Box[];
+    bucket.forEach((f, i) => {
+      const h = heightOf(f.loc);
+      const sx = f.w * 0.85, sz = f.d * 0.85;
+      m.compose(new THREE.Vector3(f.x + f.w / 2, f.depth + h / 2, f.z + f.d / 2), new THREE.Quaternion(), new THREE.Vector3(sx, h, sz));
+      im.setMatrixAt(i, m);
+      im.setColorAt(i, mode === 'ext' ? extColor(f.ext) : locColor(f.loc));
+    });
+    im.instanceMatrix.needsUpdate = true;
+    if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    im.computeBoundingSphere();
+  }
 }
 
 // Follow VS Code theme changes (it swaps CSS variables and body classes).
@@ -300,26 +343,25 @@ function fitCamera() {
 // interaction
 const ray = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-let hover = -1;
+let hoverFile: Box | undefined;
 renderer.domElement.addEventListener('pointermove', e => {
   const r = renderer.domElement.getBoundingClientRect();
   mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(mouse, camera);
-  const hit = mesh ? ray.intersectObject(mesh)[0] : undefined;
-  hover = hit?.instanceId ?? -1;
-  if (hover >= 0) {
-    const f = files[hover];
+  const hit = meshes.length ? ray.intersectObjects(meshes)[0] : undefined;
+  hoverFile = hit?.instanceId !== undefined ? (hit.object.userData.files as Box[])[hit.instanceId] : undefined;
+  if (hoverFile) {
     tip.style.display = 'block';
     tip.style.left = e.clientX + 12 + 'px';
     tip.style.top = e.clientY + 12 + 'px';
-    tip.textContent = `${f.path}\n${f.loc.toLocaleString()} lines`;
+    tip.textContent = `${hoverFile.path}\n${hoverFile.loc.toLocaleString()} lines`;
   } else tip.style.display = 'none';
 });
 let downAt = [0, 0];
 renderer.domElement.addEventListener('pointerdown', e => (downAt = [e.clientX, e.clientY]));
 renderer.domElement.addEventListener('click', e => {
   if (Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return; // was a drag
-  if (hover >= 0) vscode.postMessage({ type: 'openFile', path: files[hover].path });
+  if (hoverFile) vscode.postMessage({ type: 'openFile', path: hoverFile.path });
 });
 
 // scheme picker
