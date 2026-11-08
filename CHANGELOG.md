@@ -3,9 +3,7 @@
 All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-Everything under [Unreleased] comes from a code review of the 0.0.1 codebase (findings plus follow-up tweaks).
-
-## [Unreleased]
+## [0.0.2]
 
 ### Added
 - Procedural building textures (facade styles `panels` / `windows` / `neon` + rooftops, generated on a canvas — no image assets); **Textures** toggle and **Facade** picker in the top bar, `panels` is the default
@@ -23,7 +21,7 @@ Everything under [Unreleased] comes from a code review of the 0.0.1 codebase (fi
 - Right-clicking a resource that was deleted before the handler runs no longer causes an unhandled rejection
 - Scan results are deterministic (files processed in sorted path order)
 
-## [0.0.1] - 2026-11-07
+## [0.0.1] - 2026-11-08
 
 ### Added
 - Initial release: render the open folder as a 3D city — folder → district (squarified treemap), file → building (height = lines of code, linear/sqrt/log scale)

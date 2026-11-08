@@ -121,6 +121,7 @@ function html(webview: vscode.Webview, ctx: vscode.ExtensionContext): string {
 </style></head><body>
 <div id="ui"><b id="title">Code City</b>
   <label>Project <select id="projectMode"></select></label>
+  <button id="fit" title="Zoom out to fit the whole city, keeping the current view direction">⤢ Fit</button>
   <label title="Street width between districts">Streets <input id="street" type="range" min="0" max="24" step="1" value="4" style="width:60px"></label>
   <label title="Soft sun shadows"><input id="shadows" type="checkbox" checked> Shadows</label>
   <label title="Procedural facade/roof textures on buildings"><input id="textures" type="checkbox" checked> Textures</label>
@@ -128,7 +129,6 @@ function html(webview: vscode.Webview, ctx: vscode.ExtensionContext): string {
   <label>Color <select id="colorMode"><option value="loc">LOC</option><option value="ext" selected>Extension</option></select></label>
   <label>Height <select id="scaleMode"><option>linear</option><option>sqrt</option><option>log</option></select></label>
   <label>Scheme <select id="scheme"></select></label>
-  <button id="fit" title="Zoom out to fit the whole city, keeping the current view direction">⤢ Fit</button>
   <span id="stats"></span></div>
 <aside id="types"><button id="typesToggle" title="Show / hide file types"><span id="typesArrow">◀</span><span id="typesTitle">File types</span></button><div id="typeList"></div></aside>
 <div id="stage"><div id="busy"><div class="spinner"></div><div id="busyText">Scanning …</div></div></div>

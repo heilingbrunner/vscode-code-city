@@ -123,8 +123,8 @@ export function createFacadeAtlas(style: FacadeStyle, variants: number, aniso = 
   ctx.fillRect(roofW * 0.3, roofH * 0.3, 60, 40);
   ctx.strokeStyle = '#7c7c7c';
   ctx.strokeRect(roofW * 0.3, roofH * 0.3, 60, 40);
-  // base (bottom face): dark
-  ctx.fillStyle = '#3a3a3a';
+  // base (bottom face): grey, matching the root slab underside so it never reads as black
+  ctx.fillStyle = '#6a6e76';
   ctx.fillRect(roofW, 0, baseW, roofH);
 
   // facade cells side by side below the roof strip

@@ -217,6 +217,8 @@ function extColor(ext: string): THREE.Color {
 /** District "stair" slab colors: odd nesting depths get the gray, even depths a bit darker gray. */
 const STAIR_GRAY = new THREE.Color('#7f838c');
 const STAIR_GRAY_DARK = new THREE.Color('#72767d');
+/** Fixed grey for the underside of the root slab, so the bottom of the city stays visible from low angles in every theme/mode. */
+const BOTTOM_GRAY = new THREE.Color('#686c74');
 
 function build() {
   scene.remove(group);
@@ -235,9 +237,16 @@ function build() {
   // nesting level (stair case) alternates gray / darker gray so the steps stand out
   const pal = palette();
   const dirs = boxes.filter(b => b.kind === 'dir' && b.w > 0.5 && b.d > 0.5);
+  const streetMat = new THREE.MeshLambertMaterial({ color: pal.street });
+  // unlit: a Lambert bottom face only receives the dark hemisphere ground color and renders near-black
+  const bottomMat = new THREE.MeshBasicMaterial({ color: BOTTOM_GRAY });
   for (const d of dirs) {
-    const color = d.depth === 0 ? pal.street : (d.depth % 2 ? STAIR_GRAY : STAIR_GRAY_DARK);
-    const slab = new THREE.Mesh(new THREE.BoxGeometry(d.w, 1, d.d), new THREE.MeshLambertMaterial({ color }));
+    const geo = new THREE.BoxGeometry(d.w, 1, d.d);
+    // root slab: street color on top/sides, grey on the bottom face (BoxGeometry group 3 = -y),
+    // which is otherwise lit only by the dark hemisphere ground color and vanishes into the background
+    const slab = d.depth === 0
+      ? new THREE.Mesh(geo, [streetMat, streetMat, streetMat, bottomMat, streetMat, streetMat])
+      : new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: d.depth % 2 ? STAIR_GRAY : STAIR_GRAY_DARK }));
     slab.castShadow = slab.receiveShadow = true;
     slab.position.set(d.x + d.w / 2, d.depth * 1 + 0.5 - 1, d.z + d.d / 2);
     group.add(slab);
