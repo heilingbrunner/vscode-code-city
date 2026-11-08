@@ -26,3 +26,35 @@ VS Code extension that renders the open folder as a 3D city.
 - `Code City: Max File Size KB`: Files larger than this are skipped.
 
 
+## Theory
+
+Based on the principles of Radu Marinescu’s paper, monitoring only file size (Lines of Code / LOC) and distribution across subdirectories (package structure/depth) allows you to draw the following conclusions:
+
+### Detection of Potential God Classes
+
+- __Indicator__: A single file within a subdirectory exhibits an exceptionally large file size compared to the rest of the project.
+- __Conclusion__: This highly points to a violation of the Single Responsibility Principle. The class centralizes too many tasks, hoards lines of code (High LOC), and acts as a massive, hard-to-maintain monolith.
+
+### Identification of Architectural Imbalances
+
+- __Indicator__: A specific subdirectory contains disproportionately huge files, while other directories remain nearly empty or hold only tiny fragments.
+- __Conclusion__: There is a misplacement of responsibilities in the system design. One subsystem bears the entire functional load, which often leads to compilation bottlenecks, testing delays, and frequent merge conflicts.
+
+### Spotting Shotgun Surgery Tendencies (Wide Subsystems)
+
+- __Indicator__: Extremely flat but heavily populated subdirectories (dozens or hundreds of files directly on the same hierarchy level).
+- __Conclusion__: The subsystem suffers from high logical coupling. Functionality has been unnecessarily scattered across too many small files, meaning a single conceptual change forces developers to modify numerous files across that directory.
+
+### Exposing Dead or Redundant Code
+
+- __Indicator__: Subdirectories where file sizes stagnate completely over months, while neighboring directories grow dynamically.
+- __Conclusion__: This indicates legacy or dead code. These components are structurally present but no longer contribute to the active evolution of the system, cluttering the overall architecture.
+
+### The Limitation According to Marinescu
+
+Marinescu emphasizes in his work that size and directory structure serve as excellent initial filters (symptom detectors) to isolate suspicious areas. However, to eliminate false positives, you must eventually combine them with internal design metrics—such as coupling (how much files interact with each other) and cohesion (whether the content inside a large file logically belongs together).
+
+## References
+
+- R. Marinescu. Detection strategies: Metrics-based rules for detecting design flaws. In ICSM 2004, pages 350–359. IEEE CS Press, 2004
+- [Richard Wettel - CodeCity](https://wettel.github.io/codecity.html)
