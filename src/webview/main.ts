@@ -447,7 +447,9 @@ function renderTypes(counts: Record<string, number>, status: string) {
   $('typeList').replaceChildren(...rows.map(([ext, n]) => {
     const row = document.createElement('div');
     row.className = 'trow';
-    row.title = `${n.toLocaleString()} of ${total.toLocaleString()} files`;
+    const name = ext ? `*.${ext}` : '(none)';
+    const tip = `${name},${n.toLocaleString()} of ${total.toLocaleString()}`;
+    row.title = tip;
     const pill = document.createElement('span');
     pill.className = 'pill';
     pill.style.background = '#' + extColor(ext).getHexString();
@@ -455,10 +457,12 @@ function renderTypes(counts: Record<string, number>, status: string) {
     pill.style.width = `${Math.max(6, Math.round(Math.sqrt(n / max) * 170))}px`;
     const label = document.createElement('span');
     label.className = 'tlabel';
-    label.textContent = ext || '(none)'; // full extension name; CSS only clips if it can't fit the panel
+    label.textContent = name; // full extension name; CSS only clips if it can't fit the panel
     const count = document.createElement('span');
     count.className = 'tcount';
     count.textContent = n.toLocaleString();
+    // set explicitly on every part so the tooltip shows over the label and count, not just the (possibly tiny) bar
+    pill.title = label.title = count.title = tip;
     row.append(pill, label, count);
     return row;
   }));
