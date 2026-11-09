@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.0.4]
+
+### Changed
+- File types panel: bars are labeled `*.<ext>` (e.g. `*.cs`); files without an extension still show `(none)`
+- File types panel: labels and counts use the same 11px font size as the top bar
+- File type bar, label and count tooltips now read `*.<ext>, <n> of <total>` (previously `<n> of <total> files`)
+
+### Fixed
+- File types panel: extension labels and counts were hard-coded black and became invisible in dark themes where they extended past their bar; they now use the theme's editor foreground color, with bars drawn at 60% opacity to keep the text readable on top of them
+- File types panel: the tooltip is now also set on the label and count, so it is reachable when the bar is too narrow to hover
+
 ## [0.0.3]
 
 ### Changed
