@@ -3,6 +3,14 @@
 All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- Top bar: **Copy** button copies a PNG screenshot of the current city view to the clipboard; if the webview cannot access the clipboard it offers to save the PNG as a file instead
+
+### Changed
+- The city is now rendered on demand (camera moves, resize, setting changes) instead of every animation frame, so an idle view no longer uses CPU/GPU
+
 ## [0.0.4]
 
 ### Changed

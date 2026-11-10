@@ -1,4 +1,7 @@
 import * as vscode from 'vscode';
+import * as os from 'os';
+import * as path from 'path';
+import { decodeScreenshot } from './screenshot.ts';
 import { listFiles, relPath, scan, type ScanProgress } from './scanner.ts';
 import { ALL_FILES, AUTO, folderExcludeGlobs, globToRegExp, matchesProject, parseProjectTypes, resolveProject } from './projects.ts';
 
@@ -122,6 +125,7 @@ function html(webview: vscode.Webview, ctx: vscode.ExtensionContext): string {
 <div id="ui">
   <label>Project <select id="projectMode"></select></label>
   <button id="fit" title="Zoom out to fit the whole city, keeping the current view direction">⤢ Fit</button>
+  <button id="shot" title="Copy a screenshot of the current view to the clipboard">Copy</button>
   <label title="Street width between districts">Streets <input id="street" type="range" min="0" max="24" step="1" value="12" style="width:60px"></label>
   <label title="Soft sun shadows"><input id="shadows" type="checkbox" checked> Shadows</label>
   <label title="Procedural facade/roof textures on buildings"><input id="textures" type="checkbox" checked> Textures</label>
@@ -134,6 +138,23 @@ function html(webview: vscode.Webview, ctx: vscode.ExtensionContext): string {
 <div id="stage"><div id="busy"><div class="spinner"></div><div id="busyText">Scanning …</div></div></div>
 <div id="tip"></div>
 <script nonce="${nonce}" src="${script}"></script></body></html>`;
+}
+
+/** Fallback when the webview cannot write to the clipboard: let the user save the PNG instead. */
+async function saveScreenshot(data: unknown) {
+  const bytes = decodeScreenshot(data);
+  if (!bytes) { vscode.window.showErrorMessage('Code City: invalid screenshot data.'); return; }
+  const target = await vscode.window.showSaveDialog({
+    defaultUri: vscode.Uri.file(path.join(os.homedir(), 'code-city.png')),
+    filters: { 'PNG image': ['png'] },
+  });
+  if (!target) return;
+  try {
+    await vscode.workspace.fs.writeFile(target, bytes);
+    vscode.window.showInformationMessage(`Code City: screenshot saved to ${target.fsPath}`);
+  } catch (err) {
+    vscode.window.showErrorMessage(`Code City: could not save screenshot (${String(err)})`);
+  }
 }
 
 export function activate(ctx: vscode.ExtensionContext) {
@@ -194,7 +215,8 @@ export function activate(ctx: vscode.ExtensionContext) {
     panel.webview.onDidReceiveMessage(async msg => {
       if (msg.type === 'ready') render();
       else if (msg.type === 'setProject' && typeof msg.name === 'string') setProject(msg.name);
-      else if (msg.type === 'openFile' && rootUri && typeof msg.path === 'string' && !msg.path.includes('..')) {
+      else if (msg.type === 'saveScreenshot') await saveScreenshot(msg.data);
+      else if (msg.type === 'openFile'&& rootUri && typeof msg.path === 'string' && !msg.path.includes('..')) {
         await vscode.window.showTextDocument(vscode.Uri.joinPath(rootUri, msg.path));
       }
     });

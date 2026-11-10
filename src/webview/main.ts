@@ -69,11 +69,31 @@ function aimFill() {
   fill.target.position.copy(controls.target);
 }
 
+// ---- render on demand ----
+// Draw a frame only when something changed (camera, damping, resize, scene/palette/shadow/texture
+// changes) instead of every animation frame; an idle city then costs no CPU/GPU at all.
+let frameQueued = false;
+function invalidate() {
+  if (frameQueued) return;
+  frameQueued = true;
+  requestAnimationFrame(frame);
+}
+function frame() {
+  frameQueued = false;
+  controls.update(); // fires 'change' (-> invalidate) while the camera is moving or damping, so the loop self-sustains until it settles
+  aimSun();
+  aimFill();
+  renderer.render(scene, camera);
+}
+controls.addEventListener('change', invalidate);
+renderer.domElement.addEventListener('webglcontextrestored', invalidate);
+
 const shadowsInput = $<HTMLInputElement>('shadows');
 shadowsInput.checked = vscode.getState()?.shadows ?? true;
 function applyShadows() {
   renderer.shadowMap.enabled = sun.castShadow = shadowsInput.checked;
   group.traverse(o => { const m = o as THREE.Mesh; if (m.material) (m.material as THREE.Material).needsUpdate = true; });
+  invalidate();
 }
 shadowsInput.addEventListener('change', () => {
   vscode.setState({ ...vscode.getState(), shadows: shadowsInput.checked });
@@ -92,6 +112,7 @@ function applyTextures() {
     (im.material as THREE.MeshLambertMaterial).map = texturesInput.checked ? atlas?.texture ?? null : null;
     (im.material as THREE.Material).needsUpdate = true;
   }
+  invalidate();
 }
 texturesInput.addEventListener('change', () => {
   vscode.setState({ ...vscode.getState(), textures: texturesInput.checked });
@@ -203,6 +224,7 @@ function applyScene() {
   hemi.groundColor.copy(p.ground);
   sun.color.copy(p.sun);
   fill.color.copy(p.sky); // tint the fill with the scheme's sky color
+  invalidate();
 }
 applyScene();
 
@@ -285,6 +307,7 @@ function build() {
 
   const total = files.reduce((s, f) => s + f.loc, 0);
   $('stats').textContent = `${files.length} files · ${total.toLocaleString()} LOC`;
+  invalidate();
 }
 
 /** Size the sun's shadow frustum to the layout plus the tallest building, and aim the sun at the city's center. */
@@ -321,6 +344,7 @@ function recolorAndScale() {
     if (im.instanceColor) im.instanceColor.needsUpdate = true;
     im.computeBoundingSphere();
   }
+  invalidate();
 }
 
 // Follow VS Code theme changes (it swaps CSS variables and body classes).
@@ -379,6 +403,43 @@ function fitCity() {
   fitCamera();
 }
 $('fit').addEventListener('click', fitCity);
+
+// ---- screenshot -> clipboard ----
+/** Render and read back in the same task: the WebGL buffer is only guaranteed valid right after render(). */
+function captureCanvas(): Promise<Blob> {
+  renderer.render(scene, camera);
+  return new Promise((resolve, reject) =>
+    renderer.domElement.toBlob(b => (b ? resolve(b) : reject(new Error('empty capture'))), 'image/png'));
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1] ?? '');
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+const shotBtn = $<HTMLButtonElement>('shot');
+const shotLabel = shotBtn.textContent ?? '';
+shotBtn.addEventListener('click', async () => {
+  shotBtn.disabled = true;
+  let label = 'Copied ✓';
+  try {
+    const blob = await captureCanvas();
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    } catch { // clipboard blocked in this webview: hand the PNG to the host to save as a file
+      vscode.postMessage({ type: 'saveScreenshot', data: await blobToBase64(blob) });
+      label = 'Save as file…';
+    }
+  } catch {
+    label = 'Failed';
+  }
+  shotBtn.textContent = label;
+  setTimeout(() => { shotBtn.textContent = shotLabel; shotBtn.disabled = false; }, 1500);
+});
 
 // interaction
 const ray = new THREE.Raycaster();
@@ -513,16 +574,11 @@ function resize() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   if (pendingFit) fitCamera();
+  invalidate(); // setSize clears the canvas, so it must be redrawn
 }
 new ResizeObserver(resize).observe(stage); // also fires while the sidebar animates open/closed
 resize();
 
-(function loop() {
-  requestAnimationFrame(loop);
-  controls.update();
-  aimSun();
-  aimFill();
-  renderer.render(scene, camera);
-})();
+invalidate(); // first frame
 
 vscode.postMessage({ type: 'ready' });
