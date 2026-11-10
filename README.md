@@ -17,6 +17,8 @@ VS Code extension that renders the open folder as a 3D city.
 - Right-Click on root or subfolder in explorer, select "Code City: Show"
 - Open command palette, select "Code City: Show"
 - Top bar: **Textures** toggles the procedural facade/rooftop textures, **Facade** picks the style (`panels` default, `windows`, `neon`); **⤢ Fit** zooms out to best-fit the whole city from your current view direction (the city is auto-fitted when it first appears after a scan); **Copy** puts a PNG screenshot of the current view on the clipboard.
+- Mouse: **left button + drag** turns (orbits) the city, **mouse wheel** zooms in and out, **right button + drag** pans (moves) the city; the camera keeps gliding briefly after you let go
+- Mouse: hover a building to see its path and line count, **click** it to open the file in the editor
 
 ## Settings
 
