@@ -13,7 +13,7 @@
   },
   "displayName": "Code-City",
   "description": "Visualize code complexity (file length, folder structure) as a 3D city.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "engines": {
     "vscode": "^1.85.0"
   },
