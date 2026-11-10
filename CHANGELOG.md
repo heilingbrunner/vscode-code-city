@@ -3,7 +3,7 @@
 All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.0.5]
 
 ### Added
 - Top bar: **Copy** button copies a PNG screenshot of the current city view to the clipboard; if the webview cannot access the clipboard it offers to save the PNG as a file instead
